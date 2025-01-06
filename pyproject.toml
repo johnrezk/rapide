@@ -1,0 +1,49 @@
+[project]
+name = "rapide"
+version = "0.1.0"
+description = "Function caching with a swappable backend"
+authors = [{ name = "John Rezk", email = "johnrezk@users.noreply.github.com" }]
+requires-python = ">=3.8"
+dependencies = [
+    "xxhash>=3.0.0",
+]
+readme = "README.md"
+license = { text = "MIT" }
+
+[project.optional-dependencies]
+redis = [
+    "redis[hiredis]>=5.0.0",
+]
+
+[dependency-groups]
+dev = [
+    "coverage>=7.6.1",
+    "mypy>=1.14.1",
+    "pytest>=8.3.4",
+    "ruff>=0.8.6",
+    "tox>=4.23.2",
+]
+
+[tool.pdm.scripts]
+test = { composite = [
+    "docker-compose up -d",
+    "coverage run -m pytest",
+    "docker-compose down -v --remove-orphans",
+] }
+fmt = { composite = ["ruff check --select I --fix .", "ruff format ."] }
+
+[tool.coverage.run]
+omit = ["tests/*"]
+
+[tool.coverage.report]
+exclude_also = [
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
