@@ -17,7 +17,7 @@ def cache_basic(cache: Cache) -> None:
     class Key(str, enum.Enum):
         GET_CUSTOMER = "GET_CUSTOMER"
 
-    @cache(Key.GET_CUSTOMER)
+    @cache.wrap(Key.GET_CUSTOMER)
     def get_customer(index: int) -> str:
         return customers[index]
 

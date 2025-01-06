@@ -129,7 +129,7 @@ class Cache(Generic[_C]):
         finally:
             backend.release_lock(goal_res)
 
-    def __call__(
+    def wrap(
         self,
         func_key: Any,
         ttl: timedelta | None = None,
