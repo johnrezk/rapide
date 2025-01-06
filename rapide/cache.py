@@ -72,7 +72,6 @@ class CacheLock:
         self.backend.release_lock(self.unlock_key)
 
 
-_T = TypeVar("_T")
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
 _C = TypeVar("_C", bound=BackendConfig)
