@@ -1,12 +1,34 @@
 import enum
 import time
+from typing import Type
+from uuid import uuid4
+
+import pytest
 
 from rapide import Cache, create_cache
 from rapide.backend.disk import DiskBackend
 from rapide.backend.redis import RedisBackend
+from rapide.shared import Backend
 
 
-def cache_basic(cache: Cache) -> None:
+def create_test_cache(backend: Type[Backend]):
+    return create_cache(
+        domain_key=str(uuid4()),
+        backend=backend,
+        default_ttl=1,
+    )
+
+
+@pytest.fixture(params=["disk", "redis"])
+def cache(request):
+    test_cache = create_test_cache(
+        DiskBackend if request.param == "disk" else RedisBackend
+    )
+    yield test_cache
+    test_cache.invalidate_all()
+
+
+def test_basic_ops(cache: Cache):
     cache.invalidate_all()
 
     customers = {
@@ -43,7 +65,7 @@ def cache_basic(cache: Cache) -> None:
     assert get_customer(1) == "John Doe II"
     assert get_customer(2) == "Ben Smith III"
 
-    time.sleep(0.75)
+    time.sleep(1.5)
 
     assert get_customer(1) == "John Doe III"
 
@@ -53,22 +75,3 @@ def cache_basic(cache: Cache) -> None:
     # TODO do tests for below properly
 
     cache.flush_expired()
-    # cache.invalidate_domain()
-
-
-def test_disk():
-    cache = create_cache(
-        domain_key=__name__,
-        backend=DiskBackend,
-        default_ttl=0.5,
-    )
-    cache_basic(cache)
-
-
-def test_redis():
-    cache = create_cache(
-        domain_key=__name__,
-        backend=RedisBackend,
-        default_ttl=0.5,
-    )
-    cache_basic(cache)
