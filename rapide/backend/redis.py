@@ -5,11 +5,13 @@ from datetime import UTC, datetime
 from typing import Type, cast
 from uuid import uuid1
 
+import yarl
 from redis import ConnectionPool, Redis
 from redis.client import Pipeline
 from redis.exceptions import LockNotOwnedError
 from redis.lock import Lock
 
+from rapide.env import EnvUtil
 from rapide.shared import GroupKey, ResultKey, UnlockKey
 
 # UTILS
@@ -32,21 +34,31 @@ def _rk_to_dmstr(rk: ResultKey) -> str:
 
 @dataclass(slots=True)
 class RedisBackendConfig:
-    host: str
-    port: int
+    dsn: str | None = None
+    host: str | None = None
+    port: int | None = None
+    username: str | None = None
+    password: str | None = None
+    db_num: int | None = None
+    secure: bool | None = None
 
     @classmethod
     def from_env(cls) -> "RedisBackendConfig":
+        env = EnvUtil("REDIS")
         return RedisBackendConfig(
-            host="localhost",
-            port=6379,
+            dsn=env.get_str("DSN"),
+            host=env.get_str("HOST"),
+            port=env.get_int("PORT"),
+            username=env.get_str("USERNAME"),
+            password=env.get_str("PASSWORD"),
+            db_num=env.get_int("DB_NUM"),
+            secure=env.get_bool("SECURE"),
         )
 
 
 @dataclass(slots=True)
 class RedisBackend:
-    _host: str
-    _port: int
+    _dsn: str
     _pool: ConnectionPool | None
     _pool_lock: threading.Lock
 
@@ -56,9 +68,19 @@ class RedisBackend:
 
     @classmethod
     def create(cls, config: RedisBackendConfig) -> "RedisBackend":
+        dsn: str | None = config.dsn
+        if dsn is None:
+            dsn_url = yarl.URL.build(
+                scheme="rediss" if config.secure is True else "redis",
+                host=config.host or "localhost",
+                port=config.port or 6379,
+                user=config.username,
+                password=config.password,
+                path=f"/{config.db_num or 0}",
+            )
+            dsn = str(dsn_url)
         return RedisBackend(
-            _host=config.host,
-            _port=config.port,
+            _dsn=dsn,
             _pool=None,
             _pool_lock=threading.Lock(),
         )
@@ -66,11 +88,7 @@ class RedisBackend:
     def _get_pool(self) -> ConnectionPool:
         with self._pool_lock:
             if not self._pool:
-                self._pool = ConnectionPool(
-                    host=self._host,
-                    port=self._port,
-                    db=0,
-                )
+                self._pool = ConnectionPool.from_url(self._dsn)
             return self._pool
 
     def _get_client(self) -> Redis:

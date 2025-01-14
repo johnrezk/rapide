@@ -1,6 +1,6 @@
 # rapide 🐎
 
-Intuitive function caching library for Python
+Intuitive function caching library for Python (WIP)
 
 ## Features
 

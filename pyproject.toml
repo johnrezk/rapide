@@ -13,6 +13,7 @@ license = { text = "MIT" }
 [project.optional-dependencies]
 redis = [
     "redis[hiredis]>=5.0.0",
+    "yarl>=1.15.2",
 ]
 
 [dependency-groups]

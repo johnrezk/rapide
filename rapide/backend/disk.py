@@ -11,6 +11,7 @@ from typing import Self, Type, TypeVar
 
 import xxhash
 
+from rapide.env import EnvUtil
 from rapide.shared import GroupKey, ResultKey, UnlockKey
 
 
@@ -245,8 +246,11 @@ class DiskBackendConfig:
 
     @classmethod
     def from_env(cls) -> "DiskBackendConfig":
-        # TODO read from env
-        return DiskBackendConfig(Path.home() / ".rapide-cache" / "db", 3)
+        env = EnvUtil("DISK")
+        return DiskBackendConfig(
+            db_file=env.get_str("DB_FILE"),
+            pool_size=env.get_int("POOL_SIZE"),
+        )
 
 
 @dataclass(slots=True)
