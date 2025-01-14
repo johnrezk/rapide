@@ -23,6 +23,7 @@ dev = [
     "pytest>=8.3.4",
     "ruff>=0.8.6",
     "tox>=4.23.2",
+    "tox-uv>=1.13.1",
 ]
 
 [tool.pdm.scripts]
